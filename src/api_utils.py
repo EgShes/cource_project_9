@@ -3,7 +3,7 @@ from typing import List
 import cv2
 import numpy as np
 import torch
-from facenet_pytorch import MTCNN
+from facenet_pytorch import MTCNN, InceptionResnetV1
 
 from .image_utils import resize, resize_proportionally
 
