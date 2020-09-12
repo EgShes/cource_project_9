@@ -1,1 +1,1 @@
-from .api_utils import InferencerMTCNN
+from src.api_utils import FaceDetInferencer, Face2VecInferencer
