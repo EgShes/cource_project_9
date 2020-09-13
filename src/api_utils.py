@@ -1,7 +1,11 @@
+import os
+import os.path as osp
+import sqlite3 as sl
 from typing import List
 
 import cv2
 import numpy as np
+import pandas as pd
 import torch
 from facenet_pytorch import (MTCNN, InceptionResnetV1,
                              fixed_image_standardization)
@@ -52,3 +56,59 @@ class Face2VecInferencer:
         face_vectors = face_vectors.detach().cpu().numpy()
         face_vectors = [face_vectors[i,:] for i in range(face_vectors.shape[0])]
         return face_vectors
+
+
+class DataBaseHandler:
+
+    TABLE = 'MAIN'
+    VEC_COL = 'vector'
+    IDENT_COL = 'identifier'
+
+    def __init__(self, db_path: str = config.db_path, db_name: str = config.db_name ):
+        if not osp.isfile(osp.join(db_path, db_name)):
+            self._init_db(db_path, db_name)
+        self.connection = sl.connect(osp.join(db_path, db_name))
+        self._update_values()
+
+    def _init_db(self, db_path: str, db_name: str):
+        os.makedirs(db_path, exist_ok=True)
+        connection = sl.connect(osp.join(db_path, db_name))
+        with connection:
+            connection.execute(
+                f'create table {self.TABLE} (' \
+                'id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,' \
+                f'{self.VEC_COL} BLOB NOT NULL,' \
+                f'{self.IDENT_COL} TEXT NOT NULL UNIQUE );'
+            )
+
+    def _db2df(self) -> pd.DataFrame:
+        df = pd.read_sql('select * from main', self.connection)
+        df[self.VEC_COL] = df[self.VEC_COL].apply(lambda x: np.frombuffer(x))
+        return df
+
+    def _update_values(self):
+        df = self._db2df()
+        identifiers = df[self.IDENT_COL].to_list() if len(df) != 0 else None
+        vectors = np.stack(df[self.VEC_COL].to_numpy()) if len(df) != 0 else None
+        self.identifiers = identifiers
+        self.vectors = vectors
+    
+    def add_record(self, vector: np.ndarray, identifier: str) -> bool:
+        df = pd.DataFrame({
+            self.VEC_COL: [vector],
+            self.IDENT_COL: [identifier]
+        })
+        try:
+            df.to_sql(self.TABLE, self.connection, if_exists='append', index=False)
+        except sl.IntegrityError as e:
+            return False
+
+        self._update_values()
+        return True
+
+    def delete_record(self, identifier: str) -> bool:
+        self.connection.execute(
+            f'DELETE from {self.TABLE} where {self.IDENT_COL} = "{identifier}"'
+        )
+        self._update_values()
+        return True
