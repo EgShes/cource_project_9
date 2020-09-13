@@ -5,7 +5,7 @@ import numpy as np
 from fastapi import APIRouter, FastAPI, File, HTTPException, UploadFile
 from pydantic import conlist
 
-from app.models import AddFaceResponse
+from app.models import AddFaceResponse, DeleteFaceResponse
 from src import DataBaseHandler, Face2VecInferencer, FaceDetInferencer, config
 
 db_handler = DataBaseHandler(db_path=config.db_path, db_name=config.db_name)
@@ -40,6 +40,21 @@ def add_face(image: bytes = File(...)):
         return {'uuid': identifier, 'message': 'face successfully added'}
     else:
         return {'message': 'face was not added'}
+
+
+@app.delete(
+    '/delete_face',
+    summary='Удалить лицо из базы данных',
+    response_model=DeleteFaceResponse,
+)
+def delete_face(uuid: uuid.UUID):
+    """
+    На вход принимает uuid - уникальную для лица строку, которая была получена при добавлении лица.
+    
+    Всегда возвращает 200, даже если такого лица не было.
+    """
+    db_handler.delete_record(str(uuid))
+    return {'message': 'face was deleted'}
 
 
 def image2vector(image: imageio.core.util.Array):
