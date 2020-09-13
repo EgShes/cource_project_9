@@ -17,13 +17,18 @@ facedet_infer = FaceDetInferencer(
 )
 face2vec_infer = Face2VecInferencer()
 
-app = FastAPI()
+app = FastAPI(
+    title="Вахтер тетя Галя",
+    description="Знает, кто живет в подъезде и как он выглядит",
+    version="0.1.0",
+)
 
 
 @app.post(
     '/detect_face',
     summary='Найти лицо на изображении',
     response_model=DetectFaceResponse,
+    tags=['Для продакшена']
 )
 def detect_face(image: bytes = File(...)):
     """
@@ -48,6 +53,7 @@ def detect_face(image: bytes = File(...)):
     '/add_face',
     summary='Добавить лицо в базу данных',
     response_model=AddFaceResponse,
+    tags=['Для продакшена']
 )
 def add_face(image: bytes = File(...)):
     """
@@ -71,6 +77,7 @@ def add_face(image: bytes = File(...)):
     '/delete_face',
     summary='Удалить лицо из базы данных',
     response_model=DeleteFaceResponse,
+    tags=['Для продакшена']
 )
 def delete_face(uuid: uuid.UUID):
     """
@@ -80,6 +87,18 @@ def delete_face(uuid: uuid.UUID):
     """
     db_handler.delete_record(str(uuid))
     return {'message': 'face was deleted'}
+
+
+@app.get(
+    '/see_uuids',
+    summary='Получить все uuid с сервера',
+    tags=['Для разработки']
+)
+def see_uuids():
+    """
+    Данный метод предназначен для удобства отладки.
+    """
+    return {'uuids': db_handler.identifiers}
 
 
 def image2vector(image: imageio.core.util.Array):
