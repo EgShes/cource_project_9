@@ -3,7 +3,6 @@ import os.path as osp
 import sqlite3 as sl
 from typing import List
 
-import cv2
 import numpy as np
 import pandas as pd
 import torch

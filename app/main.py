@@ -39,6 +39,8 @@ def detect_face(image: bytes = File(...)):
     В случае, если в базу данных есть похожее на это лицо, вернется ответ с кодом 200 
     и уникальной строкой, соответсвующей наиболее похожему лицу. Иначе - 404.
     """
+    if db_handler.vectors is None:
+        return {'message': 'database has no faces'}
     image = imageio.imread(image)
     vector = image2vector(image)
     cosine = cosine_similarity(db_handler.vectors, vector)
