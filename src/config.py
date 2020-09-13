@@ -14,5 +14,8 @@ class Config:
     db_path = 'db'
     db_name = 'database.db'
 
+    # similarity
+    similarity_threshold = 0.55
+
 
 config = Config()

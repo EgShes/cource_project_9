@@ -5,8 +5,8 @@ import numpy as np
 from fastapi import APIRouter, FastAPI, File, HTTPException, UploadFile
 from pydantic import conlist
 
-from app.models import AddFaceResponse, DeleteFaceResponse
-from src import DataBaseHandler, Face2VecInferencer, FaceDetInferencer, config
+from app.models import AddFaceResponse, DeleteFaceResponse, DetectFaceResponse
+from src import DataBaseHandler, Face2VecInferencer, FaceDetInferencer, config, cosine_similarity
 
 db_handler = DataBaseHandler(db_path=config.db_path, db_name=config.db_name)
 
@@ -18,6 +18,31 @@ facedet_infer = FaceDetInferencer(
 face2vec_infer = Face2VecInferencer()
 
 app = FastAPI()
+
+
+@app.post(
+    '/detect_face',
+    summary='Найти лицо на изображении',
+    response_model=DetectFaceResponse,
+)
+def detect_face(image: bytes = File(...)):
+    """
+    На вход принимает одно изображение. 
+
+    Если на фото нет лиц или лиц больше, чем одно, вернется ошибка 404.
+    
+    В случае, если в базу данных есть похожее на это лицо, вернется ответ с кодом 200 
+    и уникальной строкой, соответсвующей наиболее похожему лицу. Иначе - 404.
+    """
+    image = imageio.imread(image)
+    vector = image2vector(image)
+    cosine = cosine_similarity(db_handler.vectors, vector)
+    if cosine[cosine.argmax()] >= config.similarity_threshold:
+        identifier = db_handler.identifiers[cosine.argmax()]
+        return {'uuid': identifier, 'message': 'face was identified'}
+    else:
+        return {'message': 'face was not identified'}
+
 
 @app.post(
     '/add_face',

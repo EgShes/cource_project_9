@@ -85,7 +85,7 @@ class DataBaseHandler:
         connection = sl.connect(self.path)
         with connection:
             df = pd.read_sql('select * from main', connection)
-            df[self.VEC_COL] = df[self.VEC_COL].apply(lambda x: np.frombuffer(x))
+            df[self.VEC_COL] = df[self.VEC_COL].apply(lambda x: np.frombuffer(x, dtype=np.float32))
             return df
 
     def _update_values(self):
@@ -102,7 +102,6 @@ class DataBaseHandler:
                 self.VEC_COL: [vector],
                 self.IDENT_COL: [identifier]
             })
-            print(df)
             try:
                 df.to_sql(self.TABLE, connection, if_exists='append', index=False)
             except sl.IntegrityError as e:
@@ -118,5 +117,4 @@ class DataBaseHandler:
                 f'DELETE from {self.TABLE} where {self.IDENT_COL} = "{identifier}"'
             )
         self._update_values()
-        return True
 
