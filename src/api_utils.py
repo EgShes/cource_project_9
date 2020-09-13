@@ -67,7 +67,7 @@ class DataBaseHandler:
     def __init__(self, db_path: str = config.db_path, db_name: str = config.db_name ):
         if not osp.isfile(osp.join(db_path, db_name)):
             self._init_db(db_path, db_name)
-        self.connection = sl.connect(osp.join(db_path, db_name))
+        self.path = osp.join(db_path, db_name)
         self._update_values()
 
     def _init_db(self, db_path: str, db_name: str):
@@ -82,9 +82,11 @@ class DataBaseHandler:
             )
 
     def _db2df(self) -> pd.DataFrame:
-        df = pd.read_sql('select * from main', self.connection)
-        df[self.VEC_COL] = df[self.VEC_COL].apply(lambda x: np.frombuffer(x))
-        return df
+        connection = sl.connect(self.path)
+        with connection:
+            df = pd.read_sql('select * from main', connection)
+            df[self.VEC_COL] = df[self.VEC_COL].apply(lambda x: np.frombuffer(x))
+            return df
 
     def _update_values(self):
         df = self._db2df()
@@ -94,21 +96,27 @@ class DataBaseHandler:
         self.vectors = vectors
     
     def add_record(self, vector: np.ndarray, identifier: str) -> bool:
-        df = pd.DataFrame({
-            self.VEC_COL: [vector],
-            self.IDENT_COL: [identifier]
-        })
-        try:
-            df.to_sql(self.TABLE, self.connection, if_exists='append', index=False)
-        except sl.IntegrityError as e:
-            return False
+        connection = sl.connect(self.path)
+        with connection:
+            df = pd.DataFrame({
+                self.VEC_COL: [vector],
+                self.IDENT_COL: [identifier]
+            })
+            print(df)
+            try:
+                df.to_sql(self.TABLE, connection, if_exists='append', index=False)
+            except sl.IntegrityError as e:
+                return False
 
         self._update_values()
         return True
 
     def delete_record(self, identifier: str) -> bool:
-        self.connection.execute(
-            f'DELETE from {self.TABLE} where {self.IDENT_COL} = "{identifier}"'
-        )
+        connection = sl.connect(self.path)
+        with connection:
+            connection.execute(
+                f'DELETE from {self.TABLE} where {self.IDENT_COL} = "{identifier}"'
+            )
         self._update_values()
         return True
+
