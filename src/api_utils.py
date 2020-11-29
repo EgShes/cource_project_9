@@ -46,7 +46,8 @@ class FaceDetInferencer:
 class Face2VecInferencer:
 
     def __init__(self): 
-        self.net = InceptionResnetV1(pretrained='vggface2').to(config.device).eval()
+        self.net = InceptionResnetV1().to(config.device).eval()
+        self.net.load_state_dict(torch.load('/face2vec_model.pth'), strict=False)
 
     @torch.no_grad()
     def run_network(self, faces: List[np.ndarray]) -> List[np.ndarray]:

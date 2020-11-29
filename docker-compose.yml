@@ -1,0 +1,8 @@
+version: '3'
+services:
+  web:
+    build: .
+    volumes:
+      - /db:/db
+    ports:
+      - "5000:8000"
