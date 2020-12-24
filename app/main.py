@@ -28,7 +28,7 @@ app = FastAPI(
     '/detect_face',
     summary='Найти лицо на изображении',
     response_model=DetectFaceResponse,
-    tags=['Для продакшена']
+    tags=['Для промышленного использования']
 )
 def detect_face(image: bytes = File(...)):
     """
@@ -55,7 +55,7 @@ def detect_face(image: bytes = File(...)):
     '/add_face',
     summary='Добавить лицо в базу данных',
     response_model=AddFaceResponse,
-    tags=['Для продакшена']
+    tags=['Для промышленного использования']
 )
 def add_face(image: bytes = File(...)):
     """
@@ -79,7 +79,7 @@ def add_face(image: bytes = File(...)):
     '/delete_face',
     summary='Удалить лицо из базы данных',
     response_model=DeleteFaceResponse,
-    tags=['Для продакшена']
+    tags=['Для промышленного использования']
 )
 def delete_face(uuid: uuid.UUID):
     """
